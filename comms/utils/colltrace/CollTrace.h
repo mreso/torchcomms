@@ -23,7 +23,13 @@
 #include "comms/utils/colltrace/GraphCollTraceEvent.h"
 #include "comms/utils/commSpecs.h"
 
+#if defined(__HIP_PLATFORM_AMD__)
+struct ihipStream_t;
+using GpuStream_t = ihipStream_t*;
+#else
 struct CUstream_st;
+using GpuStream_t = CUstream_st*;
+#endif
 
 namespace meta::comms::colltrace {
 
@@ -134,7 +140,7 @@ class CollTrace : public ICollTrace {
   // Installs a cleanup user object on first call per graph so we know when the
   // graph is destroyed.
   std::shared_ptr<GraphCollTraceState> getOrCreateGraphState(
-      CUstream_st* stream);
+      GpuStream_t stream);
 
   // Non-blocking drain of MPMC queue and poll of in-flight eager events,
   // appending completed or progressing actions to the provided vector.

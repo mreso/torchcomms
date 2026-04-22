@@ -4,27 +4,37 @@ file(GLOB TORCHCOMMS_TRANSPORT_SOURCES
     "comms/torchcomms/transport/*.cpp"
 )
 
-find_package(CUDA)
-if(NOT CUDA_FOUND)
-    message(
-        FATAL_ERROR
-        "Transport build requires CUDA. \
-Install the CUDA toolkit or rerun with USE_TRANSPORT=OFF.")
-endif()
+if(USE_ROCM)
+    enable_language(HIP)
 
-if(NOT DEFINED ENV{NVCC_GENCODE})
-    set(ENV{NVCC_GENCODE} "-gencode=arch=compute_90,code=sm_90")
-    message(STATUS "ENV NVCC_GENCODE: $ENV{NVCC_GENCODE}")
-endif()
-set(NVCC_GENCODE $ENV{NVCC_GENCODE})
-message(STATUS "NVCC_GENCODE: ${NVCC_GENCODE}")
+    set(ROCM_HOME $ENV{ROCM_HOME})
+    if(NOT ROCM_HOME)
+        set(ROCM_HOME "/opt/rocm")
+    endif()
+    set(ROCM_INCLUDE "${ROCM_HOME}/include")
+else()
+    find_package(CUDA)
+    if(NOT CUDA_FOUND)
+        message(
+            FATAL_ERROR
+            "Transport build requires CUDA or ROCm. \
+Install the CUDA toolkit, set up ROCm, or rerun with USE_TRANSPORT=OFF.")
+    endif()
 
-if(NOT DEFINED ENV{TORCH_CUDA_ARCH_LIST})
-    set(ENV{TORCH_CUDA_ARCH_LIST} "9.0a")
+    if(NOT DEFINED ENV{NVCC_GENCODE})
+        set(ENV{NVCC_GENCODE} "-gencode=arch=compute_90,code=sm_90")
+        message(STATUS "ENV NVCC_GENCODE: $ENV{NVCC_GENCODE}")
+    endif()
+    set(NVCC_GENCODE $ENV{NVCC_GENCODE})
+    message(STATUS "NVCC_GENCODE: ${NVCC_GENCODE}")
+
+    if(NOT DEFINED ENV{TORCH_CUDA_ARCH_LIST})
+        set(ENV{TORCH_CUDA_ARCH_LIST} "9.0a")
+    endif()
+    set(TORCH_CUDA_ARCH_LIST $ENV{TORCH_CUDA_ARCH_LIST})
+    message(STATUS "TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}")
+    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:${NVCC_GENCODE}>)
 endif()
-set(TORCH_CUDA_ARCH_LIST $ENV{TORCH_CUDA_ARCH_LIST})
-message(STATUS "TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}")
-add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:${NVCC_GENCODE}>)
 
 add_compile_definitions(MOCK_SCUBA_DATA CTRAN_DISABLE_TCPDM FMT_USE_CONSTEXPR)
 
@@ -61,16 +71,31 @@ set_target_properties(torchcomms_transport PROPERTIES
     SUFFIX ".${Python3_SOABI}.so"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/comms/torchcomms"
 )
-set_target_properties(torchcomms_transport PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_RESOLVE_DEVICE_SYMBOLS ON
-    POSITION_INDEPENDENT_CODE ON
-)
+
+if(NOT USE_ROCM)
+    set_target_properties(torchcomms_transport PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON
+        CUDA_RESOLVE_DEVICE_SYMBOLS ON
+        POSITION_INDEPENDENT_CODE ON
+    )
+else()
+    set_target_properties(torchcomms_transport PROPERTIES
+        POSITION_INDEPENDENT_CODE ON
+    )
+endif()
+
 target_include_directories(torchcomms_transport PRIVATE
     ${ROOT}
     ${CONDA_INCLUDE}
     ${Python3_INCLUDE_DIRS}
 )
+if(USE_ROCM)
+    target_include_directories(torchcomms_transport PRIVATE
+        ${ROCM_INCLUDE}
+        ${ROCM_INCLUDE}/hip
+    )
+endif()
+
 target_compile_features(torchcomms_transport PRIVATE cxx_std_20)
 target_link_directories(torchcomms_transport PRIVATE ${CONDA_LIB})
 target_link_libraries(torchcomms_transport PRIVATE
@@ -99,7 +124,11 @@ else()
     )
 endif()
 
-if(CUDA_FOUND)
+if(USE_ROCM)
+    target_link_libraries(torchcomms_transport PRIVATE
+        "${ROCM_HOME}/lib/libamdhip64.so"
+    )
+elseif(CUDA_FOUND)
     target_link_libraries(torchcomms_transport PRIVATE CUDA::cudart)
 endif()
 
