@@ -51,7 +51,7 @@ PYBIND11_MODULE(_transport, m, py::mod_gil_not_used()) {
   py::class_<RdmaTransport, std::shared_ptr<RdmaTransport>>(m, "RdmaTransport")
       // initialize a new RDMATransport using a custom init fn
       .def(py::init([](at::Device device) {
-        TORCH_INTERNAL_ASSERT(device.is_cuda());
+        TORCH_INTERNAL_ASSERT(device.is_cuda() || device.is_hip());
         int cuda_device = device.index();
         return std::make_shared<RdmaTransport>(
             cuda_device, getScopedEventBaseThread().getEventBase());
