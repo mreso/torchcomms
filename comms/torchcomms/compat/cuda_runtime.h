@@ -27,6 +27,7 @@
 #define cudaErrorLaunchFailure hipErrorLaunchFailure
 #define cudaErrorContextIsDestroyed hipErrorDeinitialized
 #define cudaErrorCudartUnloading hipErrorDeinitialized
+#define cudaErrorInvalidResourceHandle hipErrorInvalidResourceHandle
 
 // Memory types
 #define cudaMemoryTypeUnregistered hipMemoryTypeUnregistered
@@ -76,6 +77,7 @@
 #define cudaStreamCaptureMode hipStreamCaptureMode
 #define cudaStreamCreate hipStreamCreate
 #define cudaStreamCreateWithFlags hipStreamCreateWithFlags
+#define cudaStreamCreateWithPriority hipStreamCreateWithPriority
 #define cudaStreamDestroy hipStreamDestroy
 #define cudaStreamSynchronize hipStreamSynchronize
 #define cudaStreamWaitEvent hipStreamWaitEvent
@@ -101,6 +103,7 @@
 
 // Stream capture / CUDA graphs
 #define cudaStreamGetCaptureInfo hipStreamGetCaptureInfo
+#define cudaStreamEndCapture hipStreamEndCapture
 #define cudaStreamCaptureModeRelaxed hipStreamCaptureModeRelaxed
 #define cudaStreamUpdateCaptureDependencies hipStreamUpdateCaptureDependencies
 #define cudaThreadExchangeStreamCaptureMode hipThreadExchangeStreamCaptureMode
