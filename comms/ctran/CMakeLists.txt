@@ -56,6 +56,10 @@ if(USE_ROCM)
         __HIP_PLATFORM_AMD__
         # BF16 types only available in .cu files compiled by hipcc
         $<$<COMPILE_LANGUAGE:HIP>:__CUDA_BF16_TYPES_EXIST__>
+        # ctran does not link fmt::fmt, so it misses the FMT_HEADER_ONLY define
+        # carried by that INTERFACE target. Set it here so fmt detail symbols
+        # (e.g. is_printable) are inlined consistently and resolve at link time.
+        FMT_HEADER_ONLY=1
     )
 endif()
 

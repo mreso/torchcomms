@@ -39,6 +39,10 @@ if(USE_ROCM)
         USE_ROCM
         __HIP_PLATFORM_AMD__
         __CUDA_BF16_TYPES_EXIST__
+        # utils does not link fmt::fmt, so it misses the FMT_HEADER_ONLY define
+        # carried by that INTERFACE target. Set it here so fmt detail symbols
+        # (e.g. is_printable) are inlined consistently and resolve at link time.
+        FMT_HEADER_ONLY=1
     )
     foreach(src ${UTILS_CU_SOURCES})
         set_source_files_properties(${src} PROPERTIES LANGUAGE HIP)

@@ -112,6 +112,9 @@ if(USE_SYSTEM_LIBS)
         "-lboost_filesystem"
         "-lboost_context"
         ${FOLLY_LDFLAGS}
+        # libfolly.a references fmt detail symbols (assert_fail, is_printable)
+        # that are not provided by the header-only fmt::fmt; link static fmt last.
+        "-l:libfmt.a"
     )
 else()
     target_link_libraries(torchcomms_transport PRIVATE
@@ -121,6 +124,9 @@ else()
         "-l:libboost_filesystem.a"
         "-l:libboost_context.a"
         ${FOLLY_LDFLAGS}
+        # libfolly.a references fmt detail symbols (assert_fail, is_printable)
+        # that are not provided by the header-only fmt::fmt; link static fmt last.
+        "-l:libfmt.a"
     )
 endif()
 
